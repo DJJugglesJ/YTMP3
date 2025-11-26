@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# YTMP3 written by Nick Gartin.
-# Script is free to use for anyone who wants.
-# You may not repackage and sell, it must remain free.
-# Enjoy!
+# YTMP3 for macOS.
+# Downloads a YouTube video as an MP3 with clipboard URL detection.
 
 set -euo pipefail
 
@@ -15,14 +13,12 @@ log() {
 require_command() {
   local cmd="$1" pkg="$2"
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    log "Missing $cmd. Installing $pkg..."
-    if command -v sudo >/dev/null 2>&1; then
-      sudo apt-get update -y
-      sudo apt-get install -y "$pkg"
-    else
-      apt-get update -y
-      apt-get install -y "$pkg"
+    log "Missing $cmd. Installing $pkg via Homebrew..."
+    if ! command -v brew >/dev/null 2>&1; then
+      log "Homebrew is required but not found. Install it from https://brew.sh/ first."
+      exit 1
     fi
+    brew install "$pkg"
   else
     log "$cmd is available."
   fi
@@ -31,7 +27,6 @@ require_command() {
 install_dependencies() {
   require_command "$YTDL_CMD" yt-dlp
   require_command ffmpeg ffmpeg
-  require_command xclip xclip
 }
 
 get_url() {
@@ -40,9 +35,9 @@ get_url() {
     return
   fi
 
-  if command -v xclip >/dev/null 2>&1; then
+  if command -v pbpaste >/dev/null 2>&1; then
     local clipboard
-    clipboard=$(xclip -o -selection clipboard || xclip -o || true)
+    clipboard=$(pbpaste || true)
     if [[ $clipboard =~ (https?://[^[:space:]"]+) ]]; then
       log "Detected URL in clipboard."
       printf '%s' "${BASH_REMATCH[1]}"
@@ -58,7 +53,7 @@ get_url() {
 main() {
   install_dependencies
 
-  log "Make sure you have copied the link to the video you wish to download or provide it when prompted."
+  log "Copy the link to the video you wish to download or provide it when prompted."
   read -r -p "Press [Enter] key to continue" _
 
   url=$(get_url "${1:-}")

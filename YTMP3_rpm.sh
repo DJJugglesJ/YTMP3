@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# YTMP3 written by Nick Gartin.
-# Script is free to use for anyone who wants.
-# You may not repackage and sell, it must remain free.
-# Enjoy!
+# YTMP3 for RPM-based Linux distributions.
+# Downloads a YouTube video as an MP3 with clipboard URL detection.
 
 set -euo pipefail
 
@@ -15,13 +13,19 @@ log() {
 require_command() {
   local cmd="$1" pkg="$2"
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    log "Missing $cmd. Installing $pkg..."
+    log "Missing $cmd. Installing $pkg via dnf/yum..."
     if command -v sudo >/dev/null 2>&1; then
-      sudo apt-get update -y
-      sudo apt-get install -y "$pkg"
+      if command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y "$pkg"
+      else
+        sudo yum install -y "$pkg"
+      fi
     else
-      apt-get update -y
-      apt-get install -y "$pkg"
+      if command -v dnf >/dev/null 2>&1; then
+        dnf install -y "$pkg"
+      else
+        yum install -y "$pkg"
+      fi
     fi
   else
     log "$cmd is available."
@@ -58,7 +62,7 @@ get_url() {
 main() {
   install_dependencies
 
-  log "Make sure you have copied the link to the video you wish to download or provide it when prompted."
+  log "Copy the link to the video you wish to download or provide it when prompted."
   read -r -p "Press [Enter] key to continue" _
 
   url=$(get_url "${1:-}")
